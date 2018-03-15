@@ -19,7 +19,7 @@ $testDlls = ls -r -include $testDllNames | ? FullName -Like *\bin\$Configuration
 $testContainerArgs = $testDlls.FullName -join " "
 
 if ($env:APPVEYOR) {
-    $testArgs = $testArgs = "/logger:Appveyor $testContainerArgs /diag:\logs\log.txt"
+    $testArgs = $testArgs = "/logger:Appveyor $testContainerArgs /diag:logs\log.txt"
 } else {
     $testArgs = $testContainerArgs
 }
