@@ -39,12 +39,8 @@ OpenCover.Console.exe -register:user -target:vstest.console.exe -targetargs:$tes
     -filter:$filter -returntargetcode
 
 if ($LASTEXITCODE) {   
-    Push-AppveyorArtifact logs\log.txt
-	Get-ChildItem *\log.*.host.txt | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
+    Get-ChildItem logs\log*.txt | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
     throw "Test failed with code $LASTEXITCODE"
 }
-
-Push-AppveyorArtifact logs\log.txt
-Get-ChildItem *\log.*.host.txt | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
 
 Write-Host "Finished code coverage."
