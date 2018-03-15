@@ -26,7 +26,7 @@ artifacts:
   - path: GoogleCloudExtension\GoogleCloudExtension\bin\Release\GoogleCloudExtension.vsix
   - path: GoogleCloudExtension\GoogleCloudExtension\bin\Debug\GoogleCloudExtension.vsix
   - path: logs
-  - path: '**\*.txt'
+  - path: '**\*host*.txt'
 
 # Run the analytics tests with code coverage report.
 test_script:
