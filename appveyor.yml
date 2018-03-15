@@ -10,9 +10,6 @@ before_build:
   - choco install opencover.portable
   - choco install codecov
 
-environment:
-  System.Debug: True
-
 # Perform the build.
 build_script:
   - bash -c ./tools/ensure_strings_extracted.sh
