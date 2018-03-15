@@ -19,7 +19,7 @@ $testDlls = ls -r -include $testDllNames | ? FullName -Like *\bin\$Configuration
 $testContainerArgs = $testDlls.FullName -join " "
 
 if ($env:APPVEYOR) {
-    $testArgs = $testArgs = "/logger:Appveyor $testContainerArgs /diag:diagnostics.txt"
+    $testArgs = $testArgs = "/logger:Appveyor $testContainerArgs /diag:\temp\diagnostics\diagnostics.txt"
 } else {
     $testArgs = $testContainerArgs
 }
@@ -39,7 +39,7 @@ OpenCover.Console.exe -register:user -target:vstest.console.exe -targetargs:$tes
     -filter:$filter -returntargetcode
 
 if ($LASTEXITCODE) {
-    Get-Content diagnostics.txt | Write-Host
+    Get-Content \temp\diagnostics\diagnostics.txt | Write-Host
     throw "Test failed with code $LASTEXITCODE"
 }
 Write-Host "Finished code coverage."
