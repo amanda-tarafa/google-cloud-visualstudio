@@ -19,7 +19,7 @@ $testDlls = ls -r -include $testDllNames | ? FullName -Like *\bin\$Configuration
 $testContainerArgs = $testDlls.FullName -join " "
 
 if ($env:APPVEYOR) {
-    $testArgs = $testArgs = "/logger:Appveyor $testContainerArgs /diag:logs\log.txt"
+    $testArgs = $testArgs = "/logger:Appveyor $testContainerArgs /inisolation /diag:logs\log.txt"
 } else {
     $testArgs = $testContainerArgs
 }
@@ -38,7 +38,7 @@ Write-Verbose "Running OpenCover.Console.exe -register:user -target:vstest.conso
 OpenCover.Console.exe -register:user -target:vstest.console.exe -targetargs:$testArgs -output:codecoverage.xml `
     -filter:$filter -returntargetcode
 
-if ($LASTEXITCODE) {   
+if ($LASTEXITCODE) {       
     Get-ChildItem logs\log*.txt | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
     throw "Test failed with code $LASTEXITCODE"
 }
