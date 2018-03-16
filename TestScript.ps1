@@ -41,6 +41,7 @@ OpenCover.Console.exe -register:user -target:vstest.console.exe -targetargs:$tes
 if ($LASTEXITCODE) {       
     Get-ChildItem logs -Include *.txt -Force -Recurse | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
 	Get-ChildItem -Path C:/Users/appveyor/AppData/Local/CrashDumps -Force | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
+	Get-ChildItem -Path C:/projects/google-cloud-visualstudio/TestResults/Deploy_appveyor*/Out *.dll -Force -Recurse | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
     throw "Test failed with code $LASTEXITCODE"
 }
 
