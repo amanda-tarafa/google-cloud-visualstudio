@@ -30,27 +30,27 @@ namespace GoogleCloudExtensionUnitTests.GcsFileProgressDialog
     [TestClass]
     public class GcsFileProgressDialogWindowTest
     {
-        private Mock<IVsSettingsManager> _settingManagerMock;
-        private Mock<IVsUIShell> _uiShellMock;
+        //private Mock<IVsSettingsManager> _settingManagerMock;
+        //private Mock<IVsUIShell> _uiShellMock;
 
         [TestInitialize]
         public void BeforeEach()
         {
-            _settingManagerMock = new Mock<IVsSettingsManager>();
-            _uiShellMock = new Mock<IVsUIShell>();
-            // ReSharper disable once RedundantAssignment
-            var intValue = 0;
-            // ReSharper disable once RedundantAssignment
-            var store = Mock.Of<IVsSettingsStore>(
-                ss => ss.GetIntOrDefault(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), out intValue) == 0);
-            _settingManagerMock.Setup(sm => sm.GetReadOnlySettingsStore(It.IsAny<uint>(), out store)).Returns(0);
-            GoogleCloudExtensionPackageTests.InitPackageMock(dte =>
-            {
-                Mock<IServiceProvider> providerMock = dte.As<IServiceProvider>();
-                GoogleCloudExtensionPackageTests.SetupService<SVsSettingsManager, IVsSettingsManager>(
-                    providerMock, _settingManagerMock);
-                GoogleCloudExtensionPackageTests.SetupService<IVsUIShell, IVsUIShell>(providerMock, _uiShellMock);
-            });
+            //_settingManagerMock = new Mock<IVsSettingsManager>();
+            //_uiShellMock = new Mock<IVsUIShell>();
+            //// ReSharper disable once RedundantAssignment
+            //var intValue = 0;
+            //// ReSharper disable once RedundantAssignment
+            //var store = Mock.Of<IVsSettingsStore>(
+            //    ss => ss.GetIntOrDefault(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), out intValue) == 0);
+            //_settingManagerMock.Setup(sm => sm.GetReadOnlySettingsStore(It.IsAny<uint>(), out store)).Returns(0);
+            //GoogleCloudExtensionPackageTests.InitPackageMock(dte =>
+            //{
+            //    Mock<IServiceProvider> providerMock = dte.As<IServiceProvider>();
+            //    GoogleCloudExtensionPackageTests.SetupService<SVsSettingsManager, IVsSettingsManager>(
+            //        providerMock, _settingManagerMock);
+            //    GoogleCloudExtensionPackageTests.SetupService<IVsUIShell, IVsUIShell>(providerMock, _uiShellMock);
+            //});
         }
 
         [TestMethod]
