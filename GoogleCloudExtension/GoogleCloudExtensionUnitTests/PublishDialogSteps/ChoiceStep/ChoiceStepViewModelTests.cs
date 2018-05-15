@@ -14,13 +14,17 @@
 
 using GoogleCloudExtension;
 using GoogleCloudExtension.Deployment;
+using GoogleCloudExtension.Deployment.UnitTests;
 using GoogleCloudExtension.PublishDialog;
 using GoogleCloudExtension.PublishDialogSteps.ChoiceStep;
+using GoogleCloudExtension.PublishDialogSteps.FlexStep;
+using GoogleCloudExtension.PublishDialogSteps.GceStep;
+using GoogleCloudExtension.PublishDialogSteps.GkeStep;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using TestingHelpers;
 
 namespace GoogleCloudExtensionUnitTests.PublishDialogSteps.ChoiceStep
 {
@@ -31,17 +35,14 @@ namespace GoogleCloudExtensionUnitTests.PublishDialogSteps.ChoiceStep
 
         private ChoiceStepViewModel _objectUnderTest;
         private IPublishDialog _mockedPublishDialog;
-        private Mock<IParsedProject> _vsProjectMock;
+        private FakeParsedProject _parsedProject;
 
         [TestInitialize]
         public virtual void BeforeEach()
         {
-            _vsProjectMock = new Mock<IParsedProject>(MockBehavior.Strict);
-            _vsProjectMock.SetupGet(p => p.Name).Returns(VisualStudioProjectName);
+            _parsedProject = new FakeParsedProject { Name = VisualStudioProjectName };
 
-            Mock<IPublishDialog> publishDialogMock = new Mock<IPublishDialog>(MockBehavior.Strict);
-            publishDialogMock.Setup(pd => pd.Project).Returns(_vsProjectMock.Object);
-            _mockedPublishDialog = publishDialogMock.Object;
+            _mockedPublishDialog = Mock.Of<IPublishDialog>(pd => pd.Project == _parsedProject);
 
             _objectUnderTest = ChoiceStepViewModel.CreateStep();
         }
@@ -55,147 +56,168 @@ namespace GoogleCloudExtensionUnitTests.PublishDialogSteps.ChoiceStep
         [TestMethod]
         public void TestInitialState()
         {
-            AssertInvariants();
-            AssertInitialState();
+            Assert.IsFalse(_objectUnderTest.CanGoNext);
+            Assert.IsFalse(_objectUnderTest.CanPublish);
+            Assert.IsNull(_objectUnderTest.PublishDialog);
+            CollectionAssert.That.IsEmpty(_objectUnderTest.Choices);
+            Assert.IsInstanceOfType(_objectUnderTest.Content, typeof(ChoiceStepContent));
         }
 
         [TestMethod]
-        public void TestChoicesWebApplication()
+        public void TestChoices_WebApplication()
         {
-            OnVisible(KnownProjectTypes.WebApplication);
+            _parsedProject.ProjectType = KnownProjectTypes.WebApplication;
+            _objectUnderTest.OnVisible(_mockedPublishDialog);
 
-            AssertInvariants();
-            AssertWebApplicationChoices();
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    Tuple.Create(
+                        Resources.PublishDialogChoiceStepAppEngineFlexName,
+                        Resources.PublishDialogChoiceStepAppEngineToolTip,
+                        false),
+                    Tuple.Create(
+                        Resources.PublishDialogChoiceStepGkeName,
+                        Resources.PublishDialogChoiceStepGkeToolTip,
+                        false),
+                    Tuple.Create(
+                        Resources.PublishDialogChoiceStepGceName,
+                        Resources.PublishDialogChoiceStepGceToolTip,
+                        true)
+                },
+                _objectUnderTest.Choices.Select(c => Tuple.Create(c.Name, c.ToolTip, c.Command.CanExecute(null)))
+                    .ToList());
         }
 
         [TestMethod]
-        public void TestChoicesCore_1_0()
+        public void TestChoices_DotnetCore()
         {
-            OnVisible(KnownProjectTypes.NetCoreWebApplication1_0);
+            _parsedProject.ProjectType = KnownProjectTypes.NetCoreWebApplication1_0;
+            _objectUnderTest.OnVisible(_mockedPublishDialog);
 
-            AssertInvariants();
-            AssertCoreChoices();
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    Tuple.Create(
+                        Resources.PublishDialogChoiceStepAppEngineFlexName,
+                        Resources.PublishDialogChoiceStepAppEngineToolTip,
+                        true),
+                    Tuple.Create(
+                        Resources.PublishDialogChoiceStepGkeName,
+                        Resources.PublishDialogChoiceStepGkeToolTip,
+                        true),
+                    Tuple.Create(
+                        Resources.PublishDialogChoiceStepGceName,
+                        Resources.PublishDialogChoiceStepGceToolTip,
+                        false)
+                },
+                _objectUnderTest.Choices.Select(c => Tuple.Create(c.Name, c.ToolTip, c.Command.CanExecute(null)))
+                    .ToList());
         }
 
         [TestMethod]
-        public void TestChoicesCore_1_1()
+        public void TestChoices_None()
         {
-            OnVisible(KnownProjectTypes.NetCoreWebApplication1_1);
+            _parsedProject.ProjectType = KnownProjectTypes.None;
+            _objectUnderTest.OnVisible(_mockedPublishDialog);
 
-            AssertInvariants();
-            AssertCoreChoices();
-        }
-
-        [TestMethod]
-        public void TestChoicesCore_2_0()
-        {
-            OnVisible(KnownProjectTypes.NetCoreWebApplication2_0);
-
-            AssertInvariants();
-            AssertCoreChoices();
-        }
-
-        [TestMethod]
-        public void TestChoicesNone()
-        {
-            OnVisible(KnownProjectTypes.None);
-
-            AssertInvariants();
-            AssertNoneChoices();
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    Tuple.Create(
+                        Resources.PublishDialogChoiceStepAppEngineFlexName,
+                        Resources.PublishDialogChoiceStepAppEngineToolTip,
+                        false),
+                    Tuple.Create(
+                        Resources.PublishDialogChoiceStepGkeName,
+                        Resources.PublishDialogChoiceStepGkeToolTip,
+                        false),
+                    Tuple.Create(
+                        Resources.PublishDialogChoiceStepGceName,
+                        Resources.PublishDialogChoiceStepGceToolTip,
+                        false)
+                },
+                _objectUnderTest.Choices.Select(c => Tuple.Create(c.Name, c.ToolTip, c.Command.CanExecute(null)))
+                    .ToList());
         }
 
         [TestMethod]
         [ExpectedException(typeof(NotSupportedException))]
-        public void TestNextThrows()
+        public void TestNext_Throws()
         {
-            OnVisible(KnownProjectTypes.WebApplication);
-
             _objectUnderTest.Next();
         }
 
         [TestMethod]
         [ExpectedException(typeof(NotSupportedException))]
-        public void TestPublishThrows()
+        public void TestPublish_Throws()
         {
-            OnVisible(KnownProjectTypes.WebApplication);
-
             _objectUnderTest.Publish();
         }
 
         [TestMethod]
-        public void TestOnFlowFinished()
+        public void TestOnFlowFinished_ResetsChoicesAndPublishDialog()
         {
-            OnVisible(KnownProjectTypes.WebApplication);
-
-            RaiseFlowFinished();
-
-            AssertInvariants();
-            AssertInitialState();
-        }
-
-        private void OnVisible(KnownProjectTypes projectType)
-        {
-            _vsProjectMock.SetupGet(p => p.ProjectType).Returns(projectType);
+            _parsedProject.ProjectType = KnownProjectTypes.WebApplication;
             _objectUnderTest.OnVisible(_mockedPublishDialog);
-        }
+            _objectUnderTest.Choices = null;
 
-        private void RaiseFlowFinished()
-        {
-            Mock<IPublishDialog> publishDialogMock = Mock.Get(_mockedPublishDialog);
-            publishDialogMock.Raise(dg => dg.FlowFinished += null, EventArgs.Empty);
-        }
+            Mock.Get(_mockedPublishDialog).Raise(dg => dg.FlowFinished += null, EventArgs.Empty);
 
-        private void AssertInitialState()
-        {
             Assert.IsNull(_objectUnderTest.PublishDialog);
-            CollectionAssert.AreEquivalent(new List<Choice>(), _objectUnderTest.Choices.ToList());
+            // ReSharper disable once AssignNullToNotNullAttribute
+            CollectionAssert.That.IsEmpty(_objectUnderTest.Choices);
         }
 
-        private void AssertWebApplicationChoices()
+        [TestMethod]
+        public void TestOnFlowFinished_RemovesHandlers()
         {
-            AssertChoices();
+            _parsedProject.ProjectType = KnownProjectTypes.WebApplication;
+            _objectUnderTest.OnVisible(_mockedPublishDialog);
+            Mock.Get(_mockedPublishDialog).Raise(dg => dg.FlowFinished += null, EventArgs.Empty);
+            _objectUnderTest.Choices = null;
 
-            Assert.IsFalse(_objectUnderTest.Choices.ElementAt(0).Command.CanExecute(null));
-            Assert.IsFalse(_objectUnderTest.Choices.ElementAt(1).Command.CanExecute(null));
-            Assert.IsTrue(_objectUnderTest.Choices.ElementAt(2).Command.CanExecute(null));
+            Mock.Get(_mockedPublishDialog).Raise(dg => dg.FlowFinished += null, EventArgs.Empty);
+
+            Assert.IsNull(_objectUnderTest.Choices);
         }
 
-        private void AssertCoreChoices()
+        [TestMethod]
+        public void TestOnAppEngineChoiceCommand()
         {
-            AssertChoices();
+            _parsedProject.ProjectType = KnownProjectTypes.NetCoreWebApplication1_0;
+            _objectUnderTest.OnVisible(_mockedPublishDialog);
 
-            Assert.IsTrue(_objectUnderTest.Choices.ElementAt(0).Command.CanExecute(null));
-            Assert.IsTrue(_objectUnderTest.Choices.ElementAt(1).Command.CanExecute(null));
-            Assert.IsFalse(_objectUnderTest.Choices.ElementAt(2).Command.CanExecute(null));
+            _objectUnderTest.Choices.Single(c => c.Name == Resources.PublishDialogChoiceStepAppEngineFlexName).Command
+                .Execute(null);
+
+            Mock.Get(_mockedPublishDialog).Verify(pd => pd.NavigateToStep(It.IsAny<FlexStepViewModel>()));
         }
 
-        private void AssertNoneChoices()
-        {
-            AssertChoices();
+        [TestMethod]
+        public void TestOnGkeChoiceCommand()
 
-            Assert.IsFalse(_objectUnderTest.Choices.ElementAt(0).Command.CanExecute(null));
-            Assert.IsFalse(_objectUnderTest.Choices.ElementAt(1).Command.CanExecute(null));
-            Assert.IsFalse(_objectUnderTest.Choices.ElementAt(2).Command.CanExecute(null));
+        {
+            _parsedProject.ProjectType = KnownProjectTypes.NetCoreWebApplication1_0;
+            _objectUnderTest.OnVisible(_mockedPublishDialog);
+
+            _objectUnderTest.Choices.Single(c => c.Name == Resources.PublishDialogChoiceStepGkeName).Command
+                .Execute(null);
+
+            Mock.Get(_mockedPublishDialog).Verify(pd => pd.NavigateToStep(It.IsAny<GkeStepViewModel>()));
         }
 
-        private void AssertChoices()
+        [TestMethod]
+        public void TestOnGceChoiceCommand()
+
         {
-            Assert.AreEqual(3, _objectUnderTest.Choices.Count());
+            _parsedProject.ProjectType = KnownProjectTypes.WebApplication;
+            _objectUnderTest.OnVisible(_mockedPublishDialog);
 
-            Assert.AreEqual(Resources.PublishDialogChoiceStepAppEngineFlexName, _objectUnderTest.Choices.ElementAt(0).Name);
-            Assert.AreEqual(Resources.PublishDialogChoiceStepAppEngineToolTip, _objectUnderTest.Choices.ElementAt(0).ToolTip);
+            _objectUnderTest.Choices.Single(c => c.Name == Resources.PublishDialogChoiceStepGceName).Command
+                .Execute(null);
 
-            Assert.AreEqual(Resources.PublishDialogChoiceStepGkeName, _objectUnderTest.Choices.ElementAt(1).Name);
-            Assert.AreEqual(Resources.PublishDialogChoiceStepGkeToolTip, _objectUnderTest.Choices.ElementAt(1).ToolTip);
-
-            Assert.AreEqual(Resources.PublishDialogChoiceStepGceName, _objectUnderTest.Choices.ElementAt(2).Name);
-            Assert.AreEqual(Resources.PublishDialogChoiceStepGceToolTip, _objectUnderTest.Choices.ElementAt(2).ToolTip);
-        }
-
-        private void AssertInvariants()
-        {
-            Assert.IsFalse(_objectUnderTest.CanGoNext);
-            Assert.IsFalse(_objectUnderTest.CanPublish);
+            Mock.Get(_mockedPublishDialog).Verify(pd => pd.NavigateToStep(It.IsAny<GceStepViewModel>()));
         }
     }
 }
